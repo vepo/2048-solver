@@ -4,7 +4,7 @@ import math
 
 class MiniMaxAlgorithm:
     infinity = float('inf')
-    MAX_DEEP = 50
+    MAX_DEEP = 30
     def __init__(self, grid):
         self.root = grid
         self.possibleNewTiles = [2, 4]
@@ -33,23 +33,22 @@ class MiniMaxAlgorithm:
         return best_move, max_value
 
     def minimize(self, grid):
+        """As a stocastic game, we will not calculate the minimum, but the average to the max"""
         self.deep += 1
         cells = grid.getAvailableCells()
         if cells == [] or self.deep > MiniMaxAlgorithm.MAX_DEEP:
             self.deep -= 1
-            return None, self.evaluate(grid)
+            return self.evaluate(grid)
 
-        min_value = MiniMaxAlgorithm.infinity
-        best_move = None
+        values = []
         for cell in cells:
-            for new_value in self.possibleNewTiles:
+            for cell_value in self.possibleNewTiles:
                 next_grid = grid.clone()
-                next_grid.setCellValue(cell, new_value)
-                move, next_value = self.maximize(next_grid)
-                if new_value < min_value:
-                    min_value, best_move = new_value, move
+                next_grid.setCellValue(cell, cell_value)
+                move, value = self.maximize(next_grid)
+                values.append(value)
         self.deep -= 1
-        return best_move, min_value
+        return sum(values) / float(len(values))
 
     def evaluate(self, grid):
         max_is_edge = False
@@ -62,8 +61,8 @@ class MiniMaxAlgorithm:
                     max_value = grid.map[x][y]
                 value += grid.map[x][y]
         if max_is_edge:
-            value *= 100
-        return value
+            value *= 2
+        return value + len(grid.getAvailableCells()) * 10
 
 class PlayerAI(BaseAI):
     def getMove(self, grid):
