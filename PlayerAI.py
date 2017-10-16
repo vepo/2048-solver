@@ -11,7 +11,7 @@ class MiniMaxAlgorithm:
         self.deep = 0
         self.alpha = -MiniMaxAlgorithm.infinity
         self.beta = MiniMaxAlgorithm.infinity
-        self.maxDeep = 4
+        self.maxDeep = 6
 
     def decision(self):
         max_value = -MiniMaxAlgorithm.infinity
@@ -21,7 +21,7 @@ class MiniMaxAlgorithm:
             next_grid.move(move)
             value = self.minimize(next_grid)
             if max_value < value:
-                best_move = move
+                max_value, best_move = value, move
         return best_move
 
     def maximize(self, grid):
@@ -29,7 +29,7 @@ class MiniMaxAlgorithm:
         moves = grid.getAvailableMoves()
         if moves == [] or self.deep > self.maxDeep:
             self.deep -= 1
-            return None, self.evaluate(grid)
+            return self.evaluate(grid)
 
         ab_value = -MiniMaxAlgorithm.infinity
 
@@ -52,7 +52,7 @@ class MiniMaxAlgorithm:
         cells = grid.getAvailableCells()
         if cells == [] or self.deep > self.maxDeep:
             self.deep -= 1
-            return None, self.evaluate(grid)
+            return self.evaluate(grid)
 
         ab_value = MiniMaxAlgorithm.infinity
         for cell in cells:
@@ -69,8 +69,39 @@ class MiniMaxAlgorithm:
         return ab_value
 
     def evaluate(self, grid):
-        value = sum(map(sum, map(lambda x: map(lambda y: math.pow(y, 2), x), grid.map)))
-        return (value * math.pow(self.deep + 1, 3)) * (1 + math.pow(len(grid.getAvailableMoves()), 3))
+        order_matrix =  [[32768, 16384, 8192, 4096],
+                         [  256,   512, 1024, 2048],
+                         [  128,    64,   32,   16],
+                         [    1,     2,    4,    8]]
+        DEEP_VALUE = self.deep + 1
+        diff_value = 0
+        merging_values = 0
+        sum_value = 0
+        ordering_value = 0
+        for x in range(0, 4):
+            for y in range(0, 4):
+                sum_value += grid.map[x][y]
+                if grid.map[x][y] == 0:
+                    pass
+                ordering_value += order_matrix[x][y] * grid.map[x][y]
+                if x > 0:
+                    diff_value += abs(grid.map[x][y] - grid.map[x - 1][y])
+                    if grid.map[x][y] == grid.map[x - 1][y]:
+                        merging_values += grid.map[x][y]
+                if y > 0:
+                    diff_value += abs(grid.map[x][y] - grid.map[x][y - 1])
+                    if grid.map[x][y] == grid.map[x][y - 1]:
+                        merging_values += grid.map[x][y]
+                if x < 3:
+                    diff_value += abs(grid.map[x][y] - grid.map[x + 1][y])
+                    if grid.map[x][y] == grid.map[x + 1][y]:
+                        merging_values += grid.map[x][y]
+                if y < 3:
+                    diff_value += abs(grid.map[x][y] - grid.map[x][y + 1])
+                    if grid.map[x][y] == grid.map[x][y + 1]:
+                        merging_values += grid.map[x][y]
+        
+        return DEEP_VALUE * (sum_value + diff_value + merging_values + 2 * ordering_value)
 
 class PlayerAI(BaseAI):
     def getMove(self, grid):
